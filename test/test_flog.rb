@@ -51,6 +51,30 @@ class TestFlog < FlogTest
     assert_equal 3, @flog.mass["-"]
   end
 
+  def test_flog_ruby_lambda_vs_to_proc
+    ruby = "array.map{ |n| n.to_i }"
+    file = "sample.rb"
+
+    @flog = Flog.new :parser => RubyParser
+    @flog.flog_ruby ruby, file
+    @flog.calculate_total_scores
+
+    exp = { "main#none" => { :branch=>1.0, :array=>1.2, :map=>1.0, :to_i=>1.1 } }
+    assert_equal exp, @flog.calls
+    assert_in_epsilon 3.448, @flog.total_score
+
+    ruby = "array.map(&:to_i)"
+    file = "sample.rb"
+
+    @flog = Flog.new :parser => RubyParser
+    @flog.flog_ruby ruby, file
+    @flog.calculate_total_scores
+
+    exp = { "main#none" => { :array=>1.2, :block_pass=>1.2, :to_proc_normal=>1.2, :map=>1.0 } }
+    assert_equal exp, @flog.calls
+    assert_in_epsilon 4.6, @flog.total_score
+  end
+
   def test_flog_ruby
     ruby = "2 + 3"
     file = "sample.rb"
